@@ -1,6 +1,7 @@
 # Test results — pfsense-network-security-lab
 
-Last full run: **2026-10-03**. Result: **141 passed, 0 failed, 0 skipped** (`python3 -m pytest`, about 1 second).
+Last full local run: **2026-10-03**. Result: **141 passed, 0 failed, 0 skipped** (`python3 -m pytest`, about 1 second).
+GitHub Actions: **2026-11-19**. Result: **141 passed** on Ubuntu and on macOS. The first run failed; see "FAIL" below.
 
 > **The most important sentence on this page:** *no pfSense virtual machine was built or configured, so none of the firewall configuration (rules, NAT, VLANs,
 > remote syslog) has been tested on a real firewall.* The tests verify the sample files, the two scripts, the file formats and the documents. The VM-based lab
@@ -27,6 +28,11 @@ Last full run: **2026-10-03**. Result: **141 passed, 0 failed, 0 skipped** (`pyt
 | Documents (`test_docs.py`) | 43 | Required documents exist; **all relative links resolve**; code fences are balanced; Mermaid diagrams are well formed; numbers in the README match the samples; the status banners are present; no document claims a real pfSense run; both paths are offered; the screenshot guide covers the README placeholders and no screenshot is committed |
 | Repository (`test_static.py`) | 31 | Required files; scripts executable; no `sudo`/installs/`eval`; the only deleting command removes the script's own temporary directory; no secrets or personal data; **only the synthetic capture is committed**; ShellCheck clean; shfmt clean |
 
+### GitHub Actions (2026-11-19)
+
+Commit `7e0c5cc`, run: <https://github.com/OYDeadpoolife/pfsense-network-security-lab/actions/runs/44528251017>. **141 passed in both jobs**
+(`ubuntu-latest` and `macos-latest`, Python 3.12). This was the first run of the scripts and tests on Linux.
+
 ### Mutation check (does the suite really catch bugs?)
 
 Five deliberate bugs were introduced one at a time into a copy of the project, and the suite failed each time: a wrong awk field for the destination address,
@@ -41,7 +47,9 @@ the firewall log and the Linux log.
 
 ## FAIL — executed and failed
 
-None in the last run.
+None in the last local run. **The first GitHub Actions run (2026-11-19, commit `ccceb13`) failed in both jobs with one failing test and 140 passing.**
+`test_no_backup_or_cache_files` counted `.pyc` files that the test run itself writes under `__pycache__` (they are git-ignored and never published).
+This had not shown up locally, where no bytecode was written. The test now ignores `__pycache__` and `.pytest_cache`. Fixed in commit `7e0c5cc`; both jobs have been green since.
 
 ## NOT TESTED — environment not available to the author when this was written
 
@@ -54,7 +62,7 @@ None in the last run.
 | Splunk searches, Logstash and Filebeat configuration | No Splunk/Elastic; only the regular expression was tested |
 | The synthetic capture **in Wireshark** | Wireshark was not installed; only `tcpdump` and a Python parser were used. The statements about Wireshark's own flags (for example retransmission marking) are expectations |
 | Whether the documentation-range `203.0.113.0/24` is blocked by pfSense's bogon list | Not verifiable without pfSense; the setup guide tells you to untick the option in the lab and why |
-| Linux (GNU tools) and GitHub Actions | Only macOS was available; the CI workflow has not run |
+| Linux on a real machine or VM | Only the Ubuntu GitHub Actions runner was used (see the CI section above) |
 | Mermaid rendering on GitHub | Only the syntax balance is checked |
 
 ## MANUAL VERIFICATION REQUIRED — to be done by whoever builds the lab (Path B)
