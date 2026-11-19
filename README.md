@@ -17,6 +17,14 @@ firewall events even before you have built the virtual machines.
 > * Two paths are offered: a **documentation-only path** (works now) and a **VM-based path** (needs your virtual machines; its results are
 >   recorded by you in [TEST_RESULTS.md](TEST_RESULTS.md)).
 
+## In plain words
+
+A firewall decides which network traffic is allowed and which is blocked. This project is a **design for a safe practice network**
+built around pfSense, a free firewall: a simulated Internet, an internal office network, a server area that is reachable from outside
+(the DMZ) and an administration area. It includes a made-up firewall log and a made-up network capture to practise reading, and two
+scripts: one summarises a firewall log, the other checks which connections are allowed or blocked. The pfSense firewall itself has
+not been built or tested yet; that part is a design with instructions. New to these terms? See the [glossary](docs/glossary.md).
+
 ## For a recruiter or SOC manager (30 seconds)
 
 * **Problem:** firewalls produce the logs that start many investigations. An analyst must read them, tell allowed from blocked traffic,
@@ -66,6 +74,10 @@ flowchart TB
     FW --- J
     FW -. "syslog UDP 5514" .-> S
 ```
+
+**How to read the diagram:** each box is a network zone. The pfSense firewall sits in the middle, so every connection between zones
+passes through it. By design, the simulated attacker (top) can only reach what the firewall allows, and the firewall sends its logs
+(dotted line) to the monitoring system (SIEM) in the management zone.
 
 Full design: [docs/architecture.md](docs/architecture.md) · addressing: [docs/addressing-plan.md](docs/addressing-plan.md) ·
 rules: [docs/firewall-policy.md](docs/firewall-policy.md) · NAT and VLAN: [docs/nat-and-vlans.md](docs/nat-and-vlans.md).

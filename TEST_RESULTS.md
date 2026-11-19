@@ -2,6 +2,7 @@
 
 Last full local run: **2026-10-03**. Result: **141 passed, 0 failed, 0 skipped** (`python3 -m pytest`, about 1 second).
 GitHub Actions: **2026-11-19**. Result: **141 passed** on Ubuntu and on macOS. The first run failed; see "FAIL" below.
+After `docs/glossary.md` was added the suite has **143 passed** (the two new tests are the existence and link checks of that page; local run, 2026-11-19).
 
 > **The most important sentence on this page:** *no pfSense virtual machine was built or configured, so none of the firewall configuration (rules, NAT, VLANs,
 > remote syslog) has been tested on a real firewall.* The tests verify the sample files, the two scripts, the file formats and the documents. The VM-based lab
@@ -25,7 +26,7 @@ GitHub Actions: **2026-11-19**. Result: **141 passed** on Ubuntu and on macOS. T
 | Connectivity script (`test_connectivity.py`) | 21 | Help, version, option errors; `--dry-run` and `--list` send nothing; **refuses to send without `--confirm-lab`**; **refuses any target outside `10.10.0.0/16` and `203.0.113.0/24`** (tested with 7 forbidden addresses, before any traffic); loopback only with an explicit flag; PASS/FAIL logic and exit status against a **local listener**; ICMP to loopback; invalid rows; only the requested zone runs; the 15 committed tests are inside the lab and **match the table in the documentation** |
 | Packet capture (`test_pcap.py`) | 7 | Valid pcap structure (15 packets); **every IP and TCP checksum is correct** (computed independently and confirmed by `tcpdump`); the numbers quoted in `docs/packet-analysis.md` (6 scanner packets, 7 SYNs, 1 SYN-ACK, 9 packets on port 22, 2 banners, 4 conversations); the blocked scanner gets no answer; the SSH connection is complete; **the capture matches the firewall log** (same source port, same time) |
 | SIEM files (`test_siem.py`) | 7 | The Splunk `rex` regular expression (converted to Python syntax) extracts every field of **all 118 log lines** and agrees with the independent parser; it also matches the remote-syslog form with a `<134>` prefix; the searches are read-only and marked NOT TESTED; the expected numbers in the search comments equal the sample; the Logstash column order follows the documented field order; no secrets in the examples |
-| Documents (`test_docs.py`) | 43 | Required documents exist; **all relative links resolve**; code fences are balanced; Mermaid diagrams are well formed; numbers in the README match the samples; the status banners are present; no document claims a real pfSense run; both paths are offered; the screenshot guide covers the README placeholders and no screenshot is committed |
+| Documents (`test_docs.py`) | 45 (43 on 2026-10-03, plus the glossary) | Required documents exist; **all relative links resolve**; code fences are balanced; Mermaid diagrams are well formed; numbers in the README match the samples; the status banners are present; no document claims a real pfSense run; both paths are offered; the screenshot guide covers the README placeholders and no screenshot is committed |
 | Repository (`test_static.py`) | 31 | Required files; scripts executable; no `sudo`/installs/`eval`; the only deleting command removes the script's own temporary directory; no secrets or personal data; **only the synthetic capture is committed**; ShellCheck clean; shfmt clean |
 
 ### GitHub Actions (2026-11-19)
