@@ -52,6 +52,12 @@ Splunk or Elastic (as SIEM), Bash/awk, Python 3 (generators and tests), pytest, 
 ## Topology
 
 ```mermaid
+---
+config:
+  htmlLabels: false
+  flowchart:
+    htmlLabels: false
+---
 flowchart TB
     subgraph WAN["WAN 203.0.113.0/24 - simulated Internet (isolated virtual network)"]
         K["kali01 203.0.113.45<br/>(attacker / test host)"]

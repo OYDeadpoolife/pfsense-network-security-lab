@@ -12,6 +12,12 @@
 ## Topology
 
 ```mermaid
+---
+config:
+  htmlLabels: false
+  flowchart:
+    htmlLabels: false
+---
 flowchart TB
     subgraph WAN["WAN 203.0.113.0/24 - simulated Internet (host-only, no real Internet)"]
         K["kali01 203.0.113.45"]
