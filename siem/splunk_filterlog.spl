@@ -1,0 +1,66 @@
+# Splunk searches for the pfSense firewall log (sourcetype pfsense:filterlog)
+# Status: NOT TESTED in Splunk. The regular expression in the rex command is tested in Python against samples/filterlog_sample.log
+# (tests/test_siem.py); the Splunk syntax, field extraction and results are not verified.
+# Assumes the lab data is in index=soc_lab with sourcetype=pfsense:filterlog (see docs/siem-integration.md).
+# The rex handles IPv4 TCP, UDP and ICMP lines. IPv6 lines have a different layout and are not extracted.
+# Lines that start with "#" are documentation. Each search below is separate: paste ONE search (without the # lines) into the search bar.
+
+# S1 - Extract the fields (IPv4 only)
+# Shows every firewall event with its fields. All following searches start the same way.
+
+index=soc_lab sourcetype=pfsense:filterlog filterlog
+| rex "filterlog(?:\[\d+\])?:\s+(?<rule>\d*),(?<sub_rule>\d*),(?<anchor>[^,]*),(?<tracker>\d+),(?<interface>[^,]+),(?<reason>[^,]+),(?<action>pass|block|unkn[^,]*),(?<direction>in|out),(?<ip_version>4),(?<tos>[^,]*),(?<ecn>[^,]*),(?<ttl>\d+),(?<ip_id>\d+),(?<offset>\d+),(?<ip_flags>[^,]*),(?<proto_id>\d+),(?<protocol>[^,]+),(?<length>\d+),(?<src_ip>[\d.]+),(?<dest_ip>[\d.]+)(?:,(?<src_port>\d+),(?<dest_port>\d+))?"
+
+# S2 - Allowed versus blocked by interface
+# Counts events per interface and action. Expected on the synthetic sample (if it is loaded): em0 pass 60 / block 14; em1 pass 22 / block 3; em2 pass 2 / block 6; em3 pass 11.
+
+index=soc_lab sourcetype=pfsense:filterlog filterlog
+| rex "filterlog(?:\[\d+\])?:\s+(?<rule>\d*),(?<sub_rule>\d*),(?<anchor>[^,]*),(?<tracker>\d+),(?<interface>[^,]+),(?<reason>[^,]+),(?<action>pass|block|unkn[^,]*),(?<direction>in|out),(?<ip_version>4),(?<tos>[^,]*),(?<ecn>[^,]*),(?<ttl>\d+),(?<ip_id>\d+),(?<offset>\d+),(?<ip_flags>[^,]*),(?<proto_id>\d+),(?<protocol>[^,]+),(?<length>\d+),(?<src_ip>[\d.]+),(?<dest_ip>[\d.]+)(?:,(?<src_port>\d+),(?<dest_port>\d+))?"
+| stats count BY interface action
+| sort interface action
+
+# S3 - Top blocked sources
+# Who is being dropped most? Expected: 198.51.100.23 (14), 10.10.20.10 (6), 10.10.10.20 (3).
+
+index=soc_lab sourcetype=pfsense:filterlog filterlog
+| rex "filterlog(?:\[\d+\])?:\s+(?<rule>\d*),(?<sub_rule>\d*),(?<anchor>[^,]*),(?<tracker>\d+),(?<interface>[^,]+),(?<reason>[^,]+),(?<action>pass|block|unkn[^,]*),(?<direction>in|out),(?<ip_version>4),(?<tos>[^,]*),(?<ecn>[^,]*),(?<ttl>\d+),(?<ip_id>\d+),(?<offset>\d+),(?<ip_flags>[^,]*),(?<proto_id>\d+),(?<protocol>[^,]+),(?<length>\d+),(?<src_ip>[\d.]+),(?<dest_ip>[\d.]+)(?:,(?<src_port>\d+),(?<dest_port>\d+))?"
+| where action="block"
+| stats count BY src_ip
+| sort - count
+
+# S4 - Blocked destination ports
+# Which services are people trying to reach? Expected top entries: 445 (4), 3389 (4), 8000 (3).
+
+index=soc_lab sourcetype=pfsense:filterlog filterlog
+| rex "filterlog(?:\[\d+\])?:\s+(?<rule>\d*),(?<sub_rule>\d*),(?<anchor>[^,]*),(?<tracker>\d+),(?<interface>[^,]+),(?<reason>[^,]+),(?<action>pass|block|unkn[^,]*),(?<direction>in|out),(?<ip_version>4),(?<tos>[^,]*),(?<ecn>[^,]*),(?<ttl>\d+),(?<ip_id>\d+),(?<offset>\d+),(?<ip_flags>[^,]*),(?<proto_id>\d+),(?<protocol>[^,]+),(?<length>\d+),(?<src_ip>[\d.]+),(?<dest_ip>[\d.]+)(?:,(?<src_port>\d+),(?<dest_port>\d+))?"
+| where action="block"
+| stats count BY protocol dest_port
+| sort - count
+
+# S5 - Internal hosts reaching non-private addresses
+# What did inside hosts contact on the Internet? Expected: 10.10.10.20 to 203.0.113.45:443 (9), plus a few benign sites.
+
+index=soc_lab sourcetype=pfsense:filterlog filterlog
+| rex "filterlog(?:\[\d+\])?:\s+(?<rule>\d*),(?<sub_rule>\d*),(?<anchor>[^,]*),(?<tracker>\d+),(?<interface>[^,]+),(?<reason>[^,]+),(?<action>pass|block|unkn[^,]*),(?<direction>in|out),(?<ip_version>4),(?<tos>[^,]*),(?<ecn>[^,]*),(?<ttl>\d+),(?<ip_id>\d+),(?<offset>\d+),(?<ip_flags>[^,]*),(?<proto_id>\d+),(?<protocol>[^,]+),(?<length>\d+),(?<src_ip>[\d.]+),(?<dest_ip>[\d.]+)(?:,(?<src_port>\d+),(?<dest_port>\d+))?"
+| where action="pass" AND cidrmatch("10.0.0.0/8", src_ip) AND NOT (cidrmatch("10.0.0.0/8", dest_ip) OR cidrmatch("172.16.0.0/12", dest_ip) OR cidrmatch("192.168.0.0/16", dest_ip))
+| stats count BY src_ip dest_ip dest_port
+| sort - count
+
+# S6 - Pivot on one address
+# Every event involving one address, in time order. Replace the address. Expected for 203.0.113.45: 60 events on em0 (SSH) and 9 on em1 (HTTPS).
+
+index=soc_lab sourcetype=pfsense:filterlog filterlog
+| rex "filterlog(?:\[\d+\])?:\s+(?<rule>\d*),(?<sub_rule>\d*),(?<anchor>[^,]*),(?<tracker>\d+),(?<interface>[^,]+),(?<reason>[^,]+),(?<action>pass|block|unkn[^,]*),(?<direction>in|out),(?<ip_version>4),(?<tos>[^,]*),(?<ecn>[^,]*),(?<ttl>\d+),(?<ip_id>\d+),(?<offset>\d+),(?<ip_flags>[^,]*),(?<proto_id>\d+),(?<protocol>[^,]+),(?<length>\d+),(?<src_ip>[\d.]+),(?<dest_ip>[\d.]+)(?:,(?<src_port>\d+),(?<dest_port>\d+))?"
+| where src_ip="203.0.113.45" OR dest_ip="203.0.113.45"
+| table _time interface action src_ip src_port dest_ip dest_port
+| sort 0 _time
+
+# S7 - Many connections from one source (brute-force indicator)
+# More than 10 new connections from one source to one port within 5 minutes. Expected: 203.0.113.45 to 10.10.20.10:22.
+
+index=soc_lab sourcetype=pfsense:filterlog filterlog
+| rex "filterlog(?:\[\d+\])?:\s+(?<rule>\d*),(?<sub_rule>\d*),(?<anchor>[^,]*),(?<tracker>\d+),(?<interface>[^,]+),(?<reason>[^,]+),(?<action>pass|block|unkn[^,]*),(?<direction>in|out),(?<ip_version>4),(?<tos>[^,]*),(?<ecn>[^,]*),(?<ttl>\d+),(?<ip_id>\d+),(?<offset>\d+),(?<ip_flags>[^,]*),(?<proto_id>\d+),(?<protocol>[^,]+),(?<length>\d+),(?<src_ip>[\d.]+),(?<dest_ip>[\d.]+)(?:,(?<src_port>\d+),(?<dest_port>\d+))?"
+| where action="pass"
+| bin _time span=5m
+| stats count BY _time src_ip dest_ip dest_port
+| where count > 10

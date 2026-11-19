@@ -1,0 +1,41 @@
+# Logstash pipeline for pfSense firewall logs. NOT TESTED against a real Logstash.
+# Receives remote syslog over UDP, splits the syslog header from the filterlog CSV and names the IPv4 TCP/UDP fields in the order documented by Netgate.
+# ICMP and IPv6 lines have a different layout: add conditionals before the csv filter if you need them.
+# Never write a password or API key in this file: use the Logstash keystore or an environment variable.
+input {
+  udp {
+    port => 5514
+    type => "pfsense"
+  }
+}
+
+filter {
+  if [type] == "pfsense" {
+    grok {
+      match => { "message" => "^<%{NONNEGINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_host} filterlog(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:filterlog_csv}" }
+    }
+    csv {
+      source => "filterlog_csv"
+      columns => ["rule", "sub_rule", "anchor", "tracker", "interface", "reason", "action", "direction", "ip_version",
+                  "tos", "ecn", "ttl", "ip_id", "offset", "ip_flags", "proto_id", "protocol", "length", "src_ip", "dst_ip",
+                  "src_port", "dst_port", "data_length", "tcp_flags"]
+    }
+    date {
+      match => ["syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss"]
+      timezone => "UTC"
+    }
+    mutate {
+      convert => { "src_port" => "integer" "dst_port" => "integer" "ttl" => "integer" "length" => "integer" }
+      remove_field => ["message", "filterlog_csv"]
+      add_field => { "[labels][synthetic]" => "true" }   # remove this line for real data
+    }
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["https://siem01.harbor.test:9200"]
+    api_key => "${ES_API_KEY}"
+    index => "pfsense-filterlog-%{+YYYY.MM.dd}"
+  }
+}

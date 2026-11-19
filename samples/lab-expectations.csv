@@ -1,0 +1,20 @@
+# Expected result of each safe connectivity test in the pfSense lab (see docs/firewall-policy.md and docs/connectivity-tests.md).
+# These are EXPECTATIONS from the firewall design. They have NOT been confirmed on a real lab by the author.
+# expected: allow = a connection or ping succeeds; block = no connection could be made (the firewall drops it silently).
+# The last column may contain commas.
+test_id,source_zone,description,protocol,target_ip,port,expected,reason
+T01,LAN,WS01 pings the firewall LAN address,icmp,10.10.10.1,0,allow,LAN rule 2: ICMP echo allowed
+T02,LAN,WS01 reaches the DNS resolver on the firewall (TCP),tcp,10.10.10.1,53,allow,LAN rule 1: DNS to the firewall
+T03,LAN,WS01 browses the DMZ web server,tcp,10.10.20.10,80,allow,LAN rule 4: web to the DMZ
+T04,LAN,WS01 tries SSH to the DMZ server,tcp,10.10.20.10,22,block,No LAN rule allows SSH to the DMZ: default deny
+T05,LAN,WS01 tries the SIEM web interface,tcp,10.10.30.50,8000,block,LAN rule 3: LAN to MGMT is blocked
+T06,LAN,WS01 opens HTTPS to the simulated Internet host,tcp,203.0.113.45,443,allow,LAN rule 5: web egress to non-private addresses
+T10,DMZ,web01 tries SMB to the workstation,tcp,10.10.10.20,445,block,DMZ rule 1: DMZ to LAN is blocked
+T11,DMZ,web01 tries RDP to the workstation,tcp,10.10.10.20,3389,block,DMZ rule 1: DMZ to LAN is blocked
+T12,DMZ,web01 ships logs to the SIEM (Beats port),tcp,10.10.30.50,5044,allow,DMZ rule 2: log shipping to siem01
+T13,DMZ,web01 tries SSH to the jump host,tcp,10.10.30.5,22,block,No DMZ rule allows DMZ to MGMT except log shipping
+T20,MGMT,jump01 connects to web01 over SSH,tcp,10.10.20.10,22,allow,MGMT rule 1: SSH sources to the DMZ
+T21,MGMT,jump01 opens the firewall web interface,tcp,10.10.30.1,443,allow,MGMT rule 2: MGMT to any (simplification)
+T30,WAN,Kali reaches the forwarded SSH port,tcp,203.0.113.10,22,allow,NAT port forward 22 to web01 with its associated WAN rule
+T31,WAN,Kali tries HTTP on the firewall WAN address,tcp,203.0.113.10,80,block,Default deny on the WAN
+T32,WAN,Kali tries the firewall web interface on the WAN address,tcp,203.0.113.10,443,block,Default deny on the WAN (the GUI must not be exposed)

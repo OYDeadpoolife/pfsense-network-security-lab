@@ -1,0 +1,28 @@
+# Filebeat example: receive pfSense remote syslog and split the filterlog CSV. NOT TESTED against a real Elastic Stack.
+# Keep credentials out of this file: use the Filebeat keystore or environment variables.
+filebeat.inputs:
+  - type: syslog
+    format: auto
+    protocol.udp:
+      host: "0.0.0.0:5514"
+
+processors:
+  - dissect:
+      tokenizer: "%{} filterlog[%{pid}]: %{filterlog_csv}"
+      field: "message"
+      target_prefix: "pfsense"
+      ignore_failure: true
+  - decode_csv_fields:
+      fields:
+        pfsense.filterlog_csv: pfsense.fields
+      separator: ","
+      ignore_missing: true
+      overwrite_keys: true
+
+output.elasticsearch:
+  hosts: ["https://siem01.harbor.test:9200"]
+  api_key: "${ES_API_KEY}"
+  index: "pfsense-filterlog"
+
+setup.template.name: "pfsense-filterlog"
+setup.template.pattern: "pfsense-filterlog*"
