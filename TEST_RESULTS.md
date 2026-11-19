@@ -64,7 +64,7 @@ This had not shown up locally, where no bytecode was written. The test now ignor
 | The synthetic capture **in Wireshark** | Wireshark was not installed; only `tcpdump` and a Python parser were used. The statements about Wireshark's own flags (for example retransmission marking) are expectations |
 | Whether the documentation-range `203.0.113.0/24` is blocked by pfSense's bogon list | Not verifiable without pfSense; the setup guide tells you to untick the option in the lab and why |
 | Linux on a real machine or VM | Only the Ubuntu GitHub Actions runner was used (see the CI section above) |
-| Mermaid rendering on GitHub | Only the syntax balance is checked |
+| Mermaid rendering on GitHub | The README diagram was viewed on GitHub on 2026-11-19 (after the labels of all diagrams were changed to SVG text, because the first version rendered with clipped text in some of them). The diagram in `docs/architecture.md` was checked only in a local Mermaid 11.4.1 render and by a syntax-balance test |
 
 ## MANUAL VERIFICATION REQUIRED — to be done by whoever builds the lab (Path B)
 
