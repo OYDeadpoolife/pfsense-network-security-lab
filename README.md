@@ -59,7 +59,7 @@ config:
     htmlLabels: false
 ---
 flowchart TB
-    subgraph WAN["WAN 203.0.113.0/24 - simulated Internet (isolated virtual network)"]
+    subgraph WAN["WAN 203.0.113.0/24 (simulated Internet)"]
         K["kali01 203.0.113.45<br/>(attacker / test host)"]
     end
     FW["pfsense-lab<br/>em0 WAN 203.0.113.10<br/>em1 LAN 10.10.10.1<br/>em2 DMZ 10.10.20.1<br/>em3 MGMT 10.10.30.1"]
@@ -81,7 +81,8 @@ flowchart TB
     FW -. "syslog UDP 5514" .-> S
 ```
 
-**How to read the diagram:** each box is a network zone. The pfSense firewall sits in the middle, so every connection between zones
+**How to read the diagram:** each box is a network zone. The WAN is a simulated Internet: an isolated virtual network, not the real
+Internet. The pfSense firewall sits in the middle, so every connection between zones
 passes through it. By design, the simulated attacker (top) can only reach what the firewall allows, and the firewall sends its logs
 (dotted line) to the monitoring system (SIEM) in the management zone.
 

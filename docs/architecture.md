@@ -19,11 +19,11 @@ config:
     htmlLabels: false
 ---
 flowchart TB
-    subgraph WAN["WAN 203.0.113.0/24 - simulated Internet (host-only, no real Internet)"]
+    subgraph WAN["WAN 203.0.113.0/24 (simulated Internet)"]
         K["kali01 203.0.113.45"]
     end
     FW["pfsense-lab<br/>WAN em0 203.0.113.10<br/>LAN em1 10.10.10.1<br/>DMZ em2 10.10.20.1<br/>MGMT em3 10.10.30.1"]
-    subgraph LAN["LAN 10.10.10.0/24 (VLAN 10 in the VLAN exercise)"]
+    subgraph LAN["LAN 10.10.10.0/24 (VLAN 10)"]
         WS["WS01 Windows<br/>10.10.10.20<br/>Sysmon"]
     end
     subgraph DMZ["DMZ 10.10.20.0/24 (VLAN 20)"]
